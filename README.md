@@ -364,14 +364,3 @@ pytest
 - Proper error handling and logging
 - Scalable architecture
 
-## 🤝 Contributing
-
-Feel free to submit issues, fork the repository, and create pull requests for any improvements.
-
-## 📄 License
-
-This project is open source and available under the MIT License.
-
-## 📞 Support
-
-For issues or questions, please create an issue in the repository.
