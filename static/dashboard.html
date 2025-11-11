@@ -1,0 +1,1570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tumlinson Electrive Drive</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a1a;
+            color: #333;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: #000;
+            color: #fff;
+            padding: 0 30px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.4em;
+            font-weight: 700;
+        }
+
+        .logo-icon {
+            width: 35px;
+            height: 35px;
+            background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+        }
+
+        .config-badge {
+            background: rgba(255, 107, 53, 0.2);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            color: #ff8c42;
+            border: 1px solid #ff6b35;
+        }
+
+        /* Action Bar */
+        .action-bar {
+            background: #fff;
+            padding: 20px 30px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+            position: sticky;
+            top: 60px;
+            z-index: 999;
+        }
+
+        .btn {
+            background: #ff6b35;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.95em;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            background: #ff8c42;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: #000;
+        }
+
+        .btn-secondary:hover {
+            background: #333;
+        }
+
+        .btn-secondary:disabled {
+            background: #ccc;
+            color: #888;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-icon {
+            font-size: 1.1em;
+        }
+
+        .nav-buttons-group {
+            display: flex;
+            gap: 5px;
+            margin-right: 15px;
+            padding-right: 15px;
+            border-right: 2px solid #e0e0e0;
+        }
+
+        /* Breadcrumb Navigation */
+        .breadcrumb-container {
+            background: #fff;
+            padding: 15px 30px;
+            border-bottom: 2px solid #ff6b35;
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95em;
+            color: #666;
+            flex-wrap: wrap;
+        }
+
+        .breadcrumb-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .breadcrumb-home {
+            color: #ff6b35;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .breadcrumb-separator {
+            color: #999;
+        }
+
+        .breadcrumb-current {
+            color: #000;
+            font-weight: 600;
+        }
+
+        /* Search Bar */
+        .search-bar {
+            background: #fff;
+            padding: 15px 30px;
+            border-bottom: 1px solid #eee;
+            position: sticky;
+            top: 60px;
+            z-index: 100;
+        }
+
+        .search-container {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 12px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.95em;
+            transition: all 0.3s;
+            background: #f8f8f8;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #ff6b35;
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(255, 107, 53, 0.1);
+        }
+
+        .items-info {
+            color: #666;
+            font-size: 0.9em;
+            white-space: nowrap;
+            padding: 8px 15px;
+            background: #f5f5f5;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+
+        /* Pagination */
+        .pagination-container {
+            background: #fff;
+            padding: 20px 30px;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .pagination-info {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .pagination-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .pagination-btn {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            background: #fff;
+            color: #333;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.2s;
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            background: #ff6b35;
+            color: #fff;
+            border-color: #ff6b35;
+        }
+
+        .pagination-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .pagination-btn.active {
+            background: #ff6b35;
+            color: #fff;
+            border-color: #ff6b35;
+            font-weight: 600;
+        }
+
+        .pagination-pages {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .pagination-size {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .pagination-size select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: #fff;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .pagination-size select:focus {
+            outline: none;
+            border-color: #ff6b35;
+        }
+
+        /* Main Content */
+        .container {
+            background: #f5f5f5;
+            min-height: calc(100vh - 60px);
+        }
+
+        .content {
+            padding: 30px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* File Grid */
+        .file-grid {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .grid-header {
+            background: #fafafa;
+            padding: 12px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            display: grid;
+            grid-template-columns: 40px 1fr 150px 180px 100px;
+            gap: 15px;
+            font-weight: 600;
+            font-size: 0.85em;
+            color: #666;
+            text-transform: uppercase;
+        }
+
+        .grid-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            display: grid;
+            grid-template-columns: 40px 1fr 150px 180px 100px;
+            gap: 15px;
+            align-items: center;
+            transition: background 0.2s;
+            cursor: pointer;
+        }
+
+        .grid-item:hover {
+            background: #f9f9f9;
+        }
+
+        .grid-item.folder {
+            background: #fff9f5;
+        }
+
+        .grid-item.folder:hover {
+            background: #fff3eb;
+        }
+
+        .item-icon {
+            font-size: 1.8em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .item-name-cell {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .item-name {
+            font-weight: 600;
+            color: #000;
+            font-size: 0.95em;
+        }
+
+        .item-slug {
+            font-size: 0.8em;
+            color: #ff6b35;
+            font-family: 'Courier New', monospace;
+            background: #fff3eb;
+            padding: 2px 8px;
+            border-radius: 4px;
+            display: inline-block;
+            max-width: fit-content;
+        }
+
+        .item-size {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .item-date {
+            color: #666;
+            font-size: 0.85em;
+        }
+
+        .item-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        .btn-action {
+            background: none;
+            border: none;
+            padding: 6px 12px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 0.85em;
+            transition: all 0.2s;
+            color: #666;
+        }
+
+        .btn-delete {
+            color: #d32f2f;
+        }
+
+        .btn-action:hover {
+            background: #f0f0f0;
+        }
+
+        .btn-delete:hover {
+            background: #ffebee;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            font-size: 1.4em;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #000;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 0.95em;
+            transition: border-color 0.3s;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #ff6b35;
+        }
+
+        .form-hint {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 6px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 25px;
+        }
+
+        .btn-cancel {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-cancel:hover {
+            background: #d0d0d0;
+        }
+
+        /* Messages */
+        .message {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            animation: slideDown 0.3s ease-out;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 500;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            color: #999;
+        }
+
+        .empty-icon {
+            font-size: 5em;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-text {
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+
+        .empty-hint {
+            font-size: 0.9em;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px;
+            color: #ff6b35;
+            font-size: 1.1em;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .grid-header,
+            .grid-item {
+                grid-template-columns: 40px 1fr 80px;
+            }
+
+            .item-size,
+            .item-date,
+            .grid-header .size-col,
+            .grid-header .date-col {
+                display: none;
+            }
+
+            .action-bar {
+                padding: 15px;
+            }
+
+            .content {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="logo">
+            <div class="logo-icon">📁</div>
+            <span>Tumlinson Electrive Drive</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <div class="config-badge" id="configBadge">Loading...</div>
+            <div id="authSection">
+                <!-- Will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Bar -->
+    <div class="action-bar">
+        <div class="nav-buttons-group">
+            <button class="btn btn-secondary" id="backBtn" onclick="navigateBack()" disabled title="Go back">
+                <span class="btn-icon">◀</span>
+            </button>
+            <button class="btn btn-secondary" id="forwardBtn" onclick="navigateForward()" disabled title="Go forward">
+                <span class="btn-icon">▶</span>
+            </button>
+            <button class="btn btn-secondary" onclick="navigateToRoot()" title="Go to root">
+                <span class="btn-icon">🏠</span>
+            </button>
+        </div>
+        <button class="btn" onclick="openModal('uploadFolder')">
+            <span class="btn-icon">📁</span> Upload Folder
+        </button>
+        <button class="btn btn-secondary" onclick="loadStructure()">
+            <span class="btn-icon">🔄</span> Refresh
+        </button>
+        <div style="flex:1"></div>
+        <div class="nav-tabs">
+            <button class="btn btn-secondary" id="tabDashboard" onclick="showDashboard()">Dashboard</button>
+            <button class="btn" id="tabTracking" onclick="showTracking()">Tracking</button>
+        </div>
+    </div>
+
+    <!-- Search and Filter Bar -->
+    <div class="search-bar">
+        <div class="search-container">
+            <input 
+                type="text" 
+                id="searchInput" 
+                class="search-input" 
+                placeholder="🔍 Search files and folders..."
+                oninput="handleSearch()"
+            >
+            <div class="items-info" id="itemsInfo">
+                <span id="itemsCount">0 items</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Breadcrumb -->
+    <div class="breadcrumb-container">
+        <div class="breadcrumb">
+            <span class="breadcrumb-item">
+                <span class="breadcrumb-home" onclick="navigateToRoot()" style="cursor: pointer;">🏠 Tumlinson Electrive Drive</span>
+            </span>
+            <span class="breadcrumb-separator" id="breadcrumbPath"></span>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- DASHBOARD VIEW -->
+        <div class="content" id="dashboardView">
+            <div id="messages"></div>
+
+            <!-- File Grid -->
+            <div class="file-grid">
+                <div class="grid-header">
+                    <div></div>
+                    <div>Name</div>
+                    <div class="size-col">Size</div>
+                    <div class="date-col">Modified</div>
+                    <div>Actions</div>
+                </div>
+                <div id="fileGrid">
+                    <div class="loading">Loading your files...</div>
+                </div>
+            </div>
+
+            <!-- Pagination Controls -->
+            <div class="pagination-container" id="paginationContainer" style="display: none;">
+                <div class="pagination-info">
+                    <span id="paginationInfo">Showing 0 items</span>
+                </div>
+                <div class="pagination-controls">
+                    <button class="pagination-btn" id="firstPageBtn" onclick="goToPage(1)" disabled>
+                        ⏮ First
+                    </button>
+                    <button class="pagination-btn" id="prevPageBtn" onclick="previousPage()" disabled>
+                        ◀ Previous
+                    </button>
+                    <div class="pagination-pages" id="paginationPages"></div>
+                    <button class="pagination-btn" id="nextPageBtn" onclick="nextPage()" disabled>
+                        Next ▶
+                    </button>
+                    <button class="pagination-btn" id="lastPageBtn" onclick="goToPage('last')" disabled>
+                        Last ⏭
+                    </button>
+                </div>
+                <div class="pagination-size">
+                    <label>Items per page:</label>
+                    <select id="itemsPerPageSelect" onchange="changeItemsPerPage()">
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50" selected>50</option>
+                        <option value="100">100</option>
+                        <option value="all">All</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- TRACKING VIEW -->
+        <div class="content" id="trackingView" style="display:none;">
+            <div class="tracking-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <div style="font-size:1.1em; font-weight:700; color:#333;">Project Invites Tracker</div>
+                <div class="search-container">
+                    <input 
+                        type="text" 
+                        id="trackingSearchInput" 
+                        class="search-input" 
+                        placeholder="🔍 Search CSV..."
+                        oninput="handleTrackingSearch()"
+                    >
+                </div>
+            </div>
+
+            <div class="file-grid" style="overflow-x:auto;">
+                <div id="trackingTable">
+                    <div class="loading">Loading tracking data...</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Upload Folder Modal -->
+    <div class="modal" id="uploadFolderModal">
+        <div class="modal-content">
+            <div class="modal-header">Upload Folder</div>
+            <form id="uploadFolderForm">
+                <div class="form-group">
+                    <div style="background: #fff3eb; padding: 12px; border-radius: 6px; border-left: 4px solid #ff6b35; margin-bottom: 15px;">
+                        <div style="font-weight: 600; color: #ff6b35; margin-bottom: 5px;">📍 Upload Location</div>
+                        <div id="uploadLocationDisplay" style="color: #333; font-size: 0.9em;">Root Directory</div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Select Folder</label>
+                    <input 
+                        type="file" 
+                        class="form-input" 
+                        id="folderInput" 
+                        webkitdirectory
+                        directory
+                        multiple
+                        required
+                    >
+                    <div class="form-hint">✓ Folder name and complete structure (all subfolders and files) will be preserved exactly as-is</div>
+                </div>
+                <div id="folderPreview" style="margin-top: 15px; max-height: 200px; overflow-y: auto; display: none;">
+                    <div style="font-size: 0.9em; color: #666; margin-bottom: 10px; font-weight: 600;">Files to upload:</div>
+                    <div id="folderPreviewList" style="font-size: 0.85em; color: #666;"></div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-cancel" onclick="closeModal('uploadFolder')">Cancel</button>
+                    <button type="submit" class="btn" id="uploadFolderBtn">Upload Folder</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <script>
+        // ===================================
+        // AUTHENTICATION CHECK - PROTECT DASHBOARD
+        // ===================================
+        
+        // Check if user is logged in, redirect to login if not
+        if (!localStorage.getItem('authToken')) {
+            window.location.href = '/';
+        }
+        
+        // ===================================
+        // AUTHENTICATION SYSTEM
+        // ===================================
+        
+        // Authentication state
+        let authToken = localStorage.getItem('authToken');
+        let currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+
+        // Get auth token
+        function getAuthToken() {
+            return localStorage.getItem('authToken');
+        }
+
+        // Set auth token
+        function setAuthToken(token) {
+            localStorage.setItem('authToken', token);
+            authToken = token;
+        }
+
+        // Clear auth token
+        function clearAuthToken() {
+            localStorage.removeItem('authToken');
+            authToken = null;
+            currentUser = null;
+        }
+
+        // Check if user is authenticated
+        function isAuthenticated() {
+            return !!getAuthToken();
+        }
+
+        // Update auth section in header
+        function updateAuthSection() {
+            const authSection = document.getElementById('authSection');
+            
+            if (isAuthenticated() && currentUser) {
+                authSection.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="background: rgba(255, 107, 53, 0.2); padding: 8px 16px; border-radius: 20px; color: #fff; font-size: 0.85em; font-weight: 600;">
+                            👤 ${currentUser.username}
+                        </div>
+                        <button class="btn btn-secondary" onclick="logout()" style="padding: 8px 16px; font-size: 0.85em;">
+                            Logout
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        // Logout
+        async function logout() {
+            if (!confirm('Are you sure you want to logout?')) {
+                return;
+            }
+            
+            try {
+                // Call logout endpoint (optional, just for logging)
+                if (isAuthenticated()) {
+                    await fetch('/api/auth/logout', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${getAuthToken()}`
+                        }
+                    });
+                }
+            } catch (error) {
+                console.log('Logout endpoint error:', error);
+            }
+            
+            clearAuthToken();
+            window.location.href = '/';
+        }
+
+        // Load current user profile
+        async function loadCurrentUser() {
+            if (!isAuthenticated()) {
+                window.location.href = '/';
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/auth/me', {
+                    headers: {
+                        'Authorization': `Bearer ${getAuthToken()}`
+                    }
+                });
+                
+                if (response.ok) {
+                    currentUser = await response.json();
+                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                    updateAuthSection();
+                } else {
+                    // Token is invalid, clear it and redirect to login
+                    clearAuthToken();
+                    window.location.href = '/';
+                }
+            } catch (error) {
+                console.log('Error loading user:', error);
+                clearAuthToken();
+                window.location.href = '/';
+            }
+        }
+
+        // ===================================
+        // EXISTING CODE (File Management)
+        // ===================================
+        
+        // Current path tracking
+        let currentPath = '';
+        
+        // Navigation history for back/forward buttons
+        let navigationHistory = [''];
+        let historyIndex = 0;
+
+        // Pagination and search state (backend-driven)
+        let currentPage = 1;
+        let itemsPerPage = 50;
+        let searchQuery = '';
+
+        // Tracking state
+        let trackingSearch = '';
+
+        // Update back/forward button states
+        function updateNavigationButtons() {
+            const backBtn = document.getElementById('backBtn');
+            const forwardBtn = document.getElementById('forwardBtn');
+            
+            backBtn.disabled = historyIndex <= 0;
+            forwardBtn.disabled = historyIndex >= navigationHistory.length - 1;
+        }
+
+        // Modal functions
+        function openModal(type) {
+            const modal = document.getElementById(type + 'Modal');
+            modal.classList.add('active');
+            
+            // Pre-fill target folder with current path
+            if (type === 'uploadFolder') {
+                // Automatically show current location for folder upload
+                const locationDisplay = document.getElementById('uploadLocationDisplay');
+                if (currentPath) {
+                    locationDisplay.innerHTML = `🏠 Tumlinson Electrive Drive › ${currentPath.replace(/\//g, ' › ')}`;
+                } else {
+                    locationDisplay.innerHTML = '🏠 Tumlinson Electrive Drive (Root)';
+                }
+            }
+        }
+
+        function closeModal(type) {
+            const modal = document.getElementById(type + 'Modal');
+            modal.classList.remove('active');
+        }
+
+        // Close modal on outside click
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        });
+
+        // Navigate to folder
+        function navigateToFolder(folderPath, skipHistory = false) {
+            currentPath = folderPath;
+            
+            if (!skipHistory) {
+                // Remove any forward history when navigating to a new location
+                navigationHistory = navigationHistory.slice(0, historyIndex + 1);
+                navigationHistory.push(folderPath);
+                historyIndex = navigationHistory.length - 1;
+            }
+            
+            // Reset search and pagination when navigating
+            searchQuery = '';
+            document.getElementById('searchInput').value = '';
+            currentPage = 1;
+            
+            updateBreadcrumb();
+            updateNavigationButtons();
+            loadStructure();
+        }
+
+        // Navigate to root
+        function navigateToRoot() {
+            if (currentPath !== '') {
+                navigateToFolder('');
+            }
+        }
+
+        // Navigate to breadcrumb path
+        function navigateToBreadcrumb(path) {
+            navigateToFolder(path);
+        }
+
+        // Navigate back
+        function navigateBack() {
+            if (historyIndex > 0) {
+                historyIndex--;
+                currentPath = navigationHistory[historyIndex];
+                updateBreadcrumb();
+                updateNavigationButtons();
+                loadStructure();
+            }
+        }
+
+        // Navigate forward
+        function navigateForward() {
+            if (historyIndex < navigationHistory.length - 1) {
+                historyIndex++;
+                currentPath = navigationHistory[historyIndex];
+                updateBreadcrumb();
+                updateNavigationButtons();
+                loadStructure();
+            }
+        }
+
+        // Update breadcrumb
+        function updateBreadcrumb() {
+            const breadcrumbPath = document.getElementById('breadcrumbPath');
+            
+            if (!currentPath) {
+                breadcrumbPath.innerHTML = '';
+                return;
+            }
+
+            const parts = currentPath.split('/');
+            let pathHtml = '';
+            let accumulatedPath = '';
+
+            parts.forEach((part, index) => {
+                if (index > 0) {
+                    accumulatedPath += '/';
+                }
+                accumulatedPath += part;
+
+                const isLast = index === parts.length - 1;
+                const currentAccumulatedPath = accumulatedPath;
+
+                pathHtml += `<span class="breadcrumb-separator">›</span>`;
+                
+                if (isLast) {
+                    pathHtml += `<span class="breadcrumb-current">${part}</span>`;
+                } else {
+                    pathHtml += `<span class="breadcrumb-item"><a href="#" onclick="navigateToBreadcrumb('${currentAccumulatedPath}'); return false;" style="color: #ff6b35; text-decoration: none;">${part}</a></span>`;
+                }
+            });
+
+            breadcrumbPath.innerHTML = pathHtml;
+        }
+
+        // Load configuration
+        async function loadConfig() {
+            try {
+                const response = await fetch('/api/config');
+                const config = await response.json();
+                
+                const storageType = config.storage_type.toUpperCase();
+                let configText = `${storageType}`;
+                
+                if (config.storage_type === 's3') {
+                    configText += ` | ${config.bucket}`;
+                }
+                
+                document.getElementById('configBadge').textContent = configText;
+            } catch (error) {
+                document.getElementById('configBadge').textContent = 'Config Error';
+            }
+        }
+
+        // Show message
+        function showMessage(message, type) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            messageDiv.innerHTML = `<span>${type === 'success' ? '✓' : '✕'}</span><span>${message}</span>`;
+            messagesDiv.appendChild(messageDiv);
+
+            setTimeout(() => {
+                messageDiv.remove();
+            }, 5000);
+        }
+
+        // Folder input preview
+        document.getElementById('folderInput').addEventListener('change', (e) => {
+            const files = e.target.files;
+            const preview = document.getElementById('folderPreview');
+            const previewList = document.getElementById('folderPreviewList');
+            
+            if (files.length > 0) {
+                preview.style.display = 'block';
+                let html = `<div style="color: #ff6b35; font-weight: 600; margin-bottom: 5px;">${files.length} files selected</div>`;
+                
+                // Show first 10 files as preview
+                const maxPreview = Math.min(files.length, 10);
+                for (let i = 0; i < maxPreview; i++) {
+                    const file = files[i];
+                    html += `<div style="padding: 3px 0;">📄 ${file.webkitRelativePath || file.name}</div>`;
+                }
+                
+                if (files.length > 10) {
+                    html += `<div style="padding: 3px 0; font-style: italic;">... and ${files.length - 10} more files</div>`;
+                }
+                
+                previewList.innerHTML = html;
+            } else {
+                preview.style.display = 'none';
+            }
+        });
+
+        // Upload folder
+        document.getElementById('uploadFolderForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const folderInput = document.getElementById('folderInput');
+            const files = folderInput.files;
+            
+            if (files.length === 0) {
+                showMessage('Please select a folder', 'error');
+                return;
+            }
+
+            // Disable button and show progress
+            const uploadBtn = document.getElementById('uploadFolderBtn');
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = `Uploading ${files.length} files...`;
+
+            try {
+                const formData = new FormData();
+                const filePaths = [];
+
+                // Process each file and preserve the complete folder structure
+                // webkitRelativePath already includes the full structure from the selected folder
+                // Example: If you select "MyProject" folder with "MyProject/src/file.js"
+                // We store it as: "MyProject/src" (relative to current location)
+                
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    // webkitRelativePath includes the root folder name
+                    // e.g., "MyProject/src/components/Header.js"
+                    const relativePath = file.webkitRelativePath || file.name;
+                    
+                    // Extract the folder path (remove only the file name at the end)
+                    // This preserves the root folder name and all subfolders
+                    const pathParts = relativePath.split('/');
+                    pathParts.pop(); // Remove file name only
+                    let folderPath = pathParts.join('/'); // Keeps "MyProject/src/components"
+                    
+                    // If we're in a subfolder, prepend currentPath
+                    // Only add currentPath if we're not at root
+                    if (currentPath) {
+                        folderPath = currentPath + '/' + folderPath;
+                    }
+                    
+                    formData.append('files', file);
+                    filePaths.push(folderPath);
+                }
+
+                // Add paths as JSON string
+                formData.append('paths', JSON.stringify(filePaths));
+
+                const headers = {};
+                if (isAuthenticated()) {
+                    headers['Authorization'] = `Bearer ${getAuthToken()}`;
+                }
+
+                const response = await fetch('/api/upload-multiple', {
+                    method: 'POST',
+                    headers: headers,
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    if (result.failed > 0) {
+                        showMessage(`Uploaded ${result.success} files, ${result.failed} failed`, 'error');
+                    } else {
+                        showMessage(`Successfully uploaded ${result.success} files!`, 'success');
+                    }
+                    document.getElementById('uploadFolderForm').reset();
+                    document.getElementById('folderPreview').style.display = 'none';
+                    closeModal('uploadFolder');
+                    loadStructure();
+                } else {
+                    if (response.status === 401) {
+                        showMessage('Session expired. Redirecting to login...', 'error');
+                        closeModal('uploadFolder');
+                        setTimeout(() => {
+                            clearAuthToken();
+                            window.location.href = '/';
+                        }, 1500);
+                    } else {
+                        showMessage(`Error: ${result.detail || 'Upload failed'}`, 'error');
+                    }
+                }
+            } catch (error) {
+                showMessage(`Error: ${error.message}`, 'error');
+            } finally {
+                // Re-enable button
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = 'Upload Folder';
+            }
+        });
+
+        // Delete item
+        async function deleteItem(path, type) {
+            if (!confirm(`Are you sure you want to delete this ${type}?`)) {
+                return;
+            }
+
+            try {
+                const endpoint = type === 'folder' ? `/api/folders/${path}` : `/api/files/${path}`;
+                const headers = {
+                    'Authorization': `Bearer ${getAuthToken()}`
+                };
+                
+                const response = await fetch(endpoint, {
+                    method: 'DELETE',
+                    headers: headers
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showMessage(result.message, 'success');
+                    loadStructure();
+                } else {
+                    if (response.status === 401) {
+                        showMessage('Session expired. Redirecting to login...', 'error');
+                        setTimeout(() => {
+                            clearAuthToken();
+                            window.location.href = '/';
+                        }, 1500);
+                    } else {
+                        showMessage(`Error: ${result.detail}`, 'error');
+                    }
+                }
+            } catch (error) {
+                showMessage(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Search functionality (triggers backend search)
+        function handleSearch() {
+            searchQuery = document.getElementById('searchInput').value;
+            currentPage = 1; // Reset to first page when searching
+            loadStructure(); // Reload with new search query
+        }
+
+        // Pagination functions
+        function showPagination(totalPages, startIndex, endIndex, totalCount) {
+            const paginationContainer = document.getElementById('paginationContainer');
+            const paginationInfo = document.getElementById('paginationInfo');
+            const paginationPages = document.getElementById('paginationPages');
+            
+            paginationContainer.style.display = 'flex';
+            
+            // Update info
+            paginationInfo.textContent = `Showing ${startIndex + 1}-${endIndex} of ${totalCount}`;
+            
+            // Update buttons
+            document.getElementById('firstPageBtn').disabled = currentPage === 1;
+            document.getElementById('prevPageBtn').disabled = currentPage === 1;
+            document.getElementById('nextPageBtn').disabled = currentPage === totalPages;
+            document.getElementById('lastPageBtn').disabled = currentPage === totalPages;
+            
+            // Generate page numbers
+            let pagesHtml = '';
+            const maxPagesToShow = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+            let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+            
+            if (endPage - startPage < maxPagesToShow - 1) {
+                startPage = Math.max(1, endPage - maxPagesToShow + 1);
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                const activeClass = i === currentPage ? 'active' : '';
+                pagesHtml += `<button class="pagination-btn ${activeClass}" onclick="goToPage(${i})">${i}</button>`;
+            }
+            
+            paginationPages.innerHTML = pagesHtml;
+        }
+
+        function hidePagination() {
+            document.getElementById('paginationContainer').style.display = 'none';
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            loadStructure(); // Reload with new page
+        }
+
+        function previousPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                loadStructure(); // Reload with new page
+            }
+        }
+
+        function nextPage() {
+            currentPage++;
+            loadStructure(); // Reload with new page
+        }
+
+        function changeItemsPerPage() {
+            const select = document.getElementById('itemsPerPageSelect');
+            itemsPerPage = select.value;
+            currentPage = 1;
+            loadStructure(); // Reload with new items per page
+        }
+
+        // Load structure with backend pagination
+        async function loadStructure() {
+            const fileGrid = document.getElementById('fileGrid');
+            fileGrid.innerHTML = '<div class="loading">Loading...</div>';
+
+            try {
+                // Build query parameters
+                const limit = itemsPerPage === 'all' ? 0 : itemsPerPage;
+                const params = new URLSearchParams({
+                    page: currentPage,
+                    limit: limit,
+                    search: searchQuery
+                });
+
+                const response = await fetch(`/api/structure?${params}`);
+                const data = await response.json();
+
+                // Filter items to show only current directory
+                const currentFolders = [];
+                const currentFiles = [];
+
+                // DEBUG: Log what we received from backend
+                console.log('=== FRONTEND DEBUG ===');
+                console.log('Current Path:', currentPath);
+                console.log('Total items from backend:', data.items.length);
+                console.log('First 10 items:', data.items.slice(0, 10));
+
+                // Filter items: show only direct children of current path
+                data.items.forEach(item => {
+                    if (item.item_type === 'folder') {
+                        const folderPath = item.path;
+                        
+                        if (currentPath === '') {
+                            // Root level: show folders that don't have a slash (top-level only)
+                            if (!folderPath.includes('/')) {
+                                console.log('✓ Root folder:', folderPath);
+                                currentFolders.push(item);
+                            }
+                        } else {
+                            // Inside a folder: show direct children only
+                            if (folderPath.startsWith(currentPath + '/')) {
+                                const relativePath = folderPath.substring(currentPath.length + 1);
+                                // Only direct children (no more slashes)
+                                if (!relativePath.includes('/')) {
+                                    console.log('✓ Child folder:', folderPath, '(relative:', relativePath + ')');
+                                    currentFolders.push(item);
+                                } else {
+                                    console.log('✗ Nested folder (skipped):', folderPath, '(relative:', relativePath + ')');
+                                }
+                            }
+                        }
+                    } else {
+                        // File
+                        const fileFolder = item.folder;
+                        
+                        if (currentPath === '' && fileFolder === '/') {
+                            // Root level files
+                            currentFiles.push(item);
+                        } else if (fileFolder === currentPath) {
+                            // Files in current folder
+                            currentFiles.push(item);
+                        }
+                    }
+                });
+                
+                console.log('Filtered folders:', currentFolders.length);
+                console.log('Filtered files:', currentFiles.length);
+                console.log('===================');
+
+                // Combine folders and files (folders first - already sorted by backend)
+                const filteredItems = [...currentFolders, ...currentFiles];
+
+                // Update display
+                displayItems(filteredItems, data.total, data.total_pages);
+
+            } catch (error) {
+                fileGrid.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">⚠️</div>
+                        <div class="empty-text">Error loading files</div>
+                        <div class="empty-hint">${error.message}</div>
+                    </div>
+                `;
+            }
+        }
+
+        // Display items (replaces the old displayPage function)
+        function displayItems(items, totalCount, totalPages) {
+            const fileGrid = document.getElementById('fileGrid');
+            
+            // Update items count
+            const countElement = document.getElementById('itemsCount');
+            if (searchQuery.trim() !== '') {
+                countElement.textContent = `${totalCount} result${totalCount !== 1 ? 's' : ''} found`;
+            } else {
+                countElement.textContent = `${totalCount} item${totalCount !== 1 ? 's' : ''}`;
+            }
+
+            if (items.length === 0) {
+                const emptyMessage = searchQuery.trim() !== '' 
+                    ? `No items match "${searchQuery}"`
+                    : 'This folder is empty';
+                const emptyHint = searchQuery.trim() !== ''
+                    ? 'Try a different search term'
+                    : 'Upload a folder to get started';
+                    
+                fileGrid.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📂</div>
+                        <div class="empty-text">${emptyMessage}</div>
+                        <div class="empty-hint">${emptyHint}</div>
+                    </div>
+                `;
+                hidePagination();
+                return;
+            }
+
+            // Build HTML
+            let html = '';
+            
+            items.forEach(item => {
+                if (item.item_type === 'folder') {
+                    html += `
+                        <div class="grid-item folder" onclick="navigateToFolder('${item.path}')" style="cursor: pointer;">
+                            <div class="item-icon">📁</div>
+                            <div class="item-name-cell">
+                                <div class="item-name">${item.name}</div>
+                                <div class="item-slug">${item.slug}</div>
+                            </div>
+                            <div class="item-size">-</div>
+                            <div class="item-date">-</div>
+                            <div class="item-actions">
+                                <button class="btn-action btn-delete" onclick="event.stopPropagation(); deleteItem('${item.path}', 'folder')">🗑️ Delete</button>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    const fileSize = (item.size / 1024).toFixed(2);
+                    const modifiedDate = new Date(item.last_modified).toLocaleString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    
+                    html += `
+                        <div class="grid-item">
+                            <div class="item-icon">📄</div>
+                            <div class="item-name-cell">
+                                <div class="item-name">${item.name}</div>
+                                <div class="item-slug">${item.slug}</div>
+                            </div>
+                            <div class="item-size">${fileSize} KB</div>
+                            <div class="item-date">${modifiedDate}</div>
+                            <div class="item-actions">
+                                <button class="btn-action btn-delete" onclick="deleteItem('${item.path}', 'file')">🗑️ Delete</button>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            fileGrid.innerHTML = html;
+
+            // Update pagination controls
+            const limit = itemsPerPage === 'all' ? 0 : parseInt(itemsPerPage);
+            if (limit > 0 && totalCount > limit) {
+                const startIndex = (currentPage - 1) * limit;
+                const endIndex = Math.min(startIndex + limit, totalCount);
+                showPagination(totalPages, startIndex, endIndex, totalCount);
+            } else {
+                hidePagination();
+            }
+        }
+
+        // Load initial data
+        loadConfig();
+        loadCurrentUser();  // Load user profile if authenticated
+        loadStructure();
+        updateTabs('dashboard');
+
+        // Tab controls
+        function updateTabs(active) {
+            const dashBtn = document.getElementById('tabDashboard');
+            const trackBtn = document.getElementById('tabTracking');
+            if (active === 'dashboard') {
+                dashBtn.classList.remove('btn-secondary');
+                dashBtn.classList.add('btn');
+                trackBtn.classList.add('btn-secondary');
+                trackBtn.classList.remove('btn');
+                document.getElementById('dashboardView').style.display = '';
+                document.getElementById('trackingView').style.display = 'none';
+            } else {
+                trackBtn.classList.remove('btn-secondary');
+                trackBtn.classList.add('btn');
+                dashBtn.classList.add('btn-secondary');
+                dashBtn.classList.remove('btn');
+                document.getElementById('dashboardView').style.display = 'none';
+                document.getElementById('trackingView').style.display = '';
+            }
+        }
+
+        function showDashboard() {
+            updateTabs('dashboard');
+        }
+
+        function showTracking() {
+            updateTabs('tracking');
+            loadTracking();
+        }
+
+        // Tracking: search only (no pagination)
+        function handleTrackingSearch() {
+            trackingSearch = document.getElementById('trackingSearchInput').value;
+            loadTracking();
+        }
+
+        async function loadTracking() {
+            const table = document.getElementById('trackingTable');
+            table.innerHTML = '<div class="loading">Loading tracking data...</div>';
+
+            try {
+                const params = new URLSearchParams({
+                    search: trackingSearch
+                });
+                const res = await fetch(`/api/tracking?${params}`);
+                const data = await res.json();
+
+                renderTrackingTable(data.headers || [], data.rows || [], data.total || 0);
+            } catch (e) {
+                table.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">⚠️</div>
+                        <div class="empty-text">Failed to load tracking data</div>
+                        <div class="empty-hint">${e.message}</div>
+                    </div>
+                `;
+            }
+        }
+
+        function renderTrackingTable(headers, rows, total) {
+            const table = document.getElementById('trackingTable');
+            if (headers.length === 0) {
+                table.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📄</div>
+                        <div class="empty-text">No data found</div>
+                        <div class="empty-hint">Ensure the Excel file exists in S3 or check server logs for details.</div>
+                    </div>
+                `;
+                return;
+            }
+
+            let thead = '<div class="grid-header">' + headers.map(h => `<div>${h}</div>`).join('') + '</div>';
+            let body = rows.map(r => {
+                return `
+                    <div class="grid-item">
+                        ${headers.map(h => `<div class="item-name-cell"><div class="item-name">${(r[h] ?? '').toString()}</div></div>`).join('')}
+                    </div>
+                `;
+            }).join('');
+
+            // Add total count info at the top
+            const totalInfo = `<div style="padding: 10px 20px; background: #f5f5f5; border-bottom: 1px solid #e0e0e0; font-size: 0.9em; color: #666;">
+                Showing ${total} row${total !== 1 ? 's' : ''}${trackingSearch ? ` (filtered by "${trackingSearch}")` : ''}
+            </div>`;
+
+            table.innerHTML = totalInfo + thead + body;
+        }
+    </script>
+</body>
+</html>
+
