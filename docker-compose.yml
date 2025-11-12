@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tumlinson_poc_app
+    ports:
+      - "8000:8000"
+    environment:
+      # AWS Configuration
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - AWS_S3_BUCKET_NAME=${AWS_S3_BUCKET_NAME}
+      
+      # Excel Tracking File
+      - TRACKING_CSV_S3_KEY=${TRACKING_CSV_S3_KEY}
+      
+      # Local Storage
+      - UPLOAD_FOLDER=${UPLOAD_FOLDER:-uploads}
+      
+      # Application Settings
+      - HOST=0.0.0.0
+      - PORT=8000
+      
+      # Database Configuration
+      - DATABASE_URL=${DATABASE_URL}
+      - DIRECT_URL=${DIRECT_URL}
+      
+      # JWT Configuration
+      - SECRET_KEY=${SECRET_KEY}
+      - ALGORITHM=${ALGORITHM:-HS256}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+    volumes:
+      # Mount uploads directory for local storage (if not using S3)
+      - ./uploads:/app/uploads
+    restart: unless-stopped
+    networks:
+      - tumlinson_network
+
+networks:
+  tumlinson_network:
+    driver: bridge
+

@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 
 from app.core.config import settings
-from app.routers import auth, files, folders, structure, tracking
+from app.routers import auth, files, folders, structure, tracking, websocket
 from app.services.storage_service import get_storage_service
 from app.services.folder_service import FolderService
 from app.utils.logger import get_logger
@@ -33,6 +33,7 @@ app.include_router(files.router)
 app.include_router(folders.router)
 app.include_router(structure.router)
 app.include_router(tracking.router)
+app.include_router(websocket.router)
 
 
 @app.on_event("startup")

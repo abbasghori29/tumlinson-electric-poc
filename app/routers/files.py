@@ -28,20 +28,26 @@ async def upload_multiple_files(
     background_tasks: BackgroundTasks,
     files: List[UploadFile] = File(...),
     paths: str = Form(...),
+    client_id: str = Form(None),
     current_user: User = Depends(get_current_active_user),
     file_service: FileService = Depends(get_file_service)
 ):
     """
     Upload multiple files with their folder paths (for folder upload)
     Preserves complete folder structure including the root folder name.
+    
+    Args:
+        files: List of files to upload
+        paths: JSON string of file paths
+        client_id: Optional WebSocket client ID for progress updates
     """
     # Parse the paths JSON string
     file_paths = json.loads(paths)
     
-    logger.info(f"User {current_user.username} uploading {len(files)} files")
+    logger.info(f"User {current_user.username} uploading {len(files)} files (client_id: {client_id})")
     
-    # Upload files
-    result = await file_service.upload_multiple_files(files, file_paths)
+    # Upload files with WebSocket progress
+    result = await file_service.upload_multiple_files(files, file_paths, client_id)
     
     # Trigger hook in background if successful
     if result['success'] > 0:
@@ -58,8 +64,8 @@ async def upload_multiple_files(
                 "upload_location": root_folder
             }
             
-            # Add hook to background tasks
-            background_tasks.add_task(file_service.on_folder_uploaded, folder_info)
+            # Add hook to background tasks with client_id for WebSocket updates
+            background_tasks.add_task(file_service.on_folder_uploaded, folder_info, client_id)
             logger.info("Hook added to background tasks")
     
     return result

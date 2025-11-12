@@ -770,6 +770,29 @@
         </div>
     </div>
 
+    <!-- Upload Progress Modal -->
+    <div class="modal" id="uploadProgressModal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">Upload Progress</div>
+            <div style="padding: 20px 0;">
+                <!-- Progress Bar -->
+                <div style="background: #f0f0f0; border-radius: 8px; height: 30px; overflow: hidden; margin-bottom: 20px; position: relative;">
+                    <div id="progressBar" style="background: linear-gradient(90deg, #ff6b35, #ff8c42); height: 100%; width: 0%; transition: width 0.3s; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.9em;">
+                        0%
+                    </div>
+                </div>
+                
+                <!-- Progress Messages -->
+                <div id="progressMessages" style="max-height: 300px; overflow-y: auto; background: #fafafa; border-radius: 6px; padding: 15px;">
+                    <div style="color: #666; font-size: 0.9em;">Preparing upload...</div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn" id="closeProgressBtn" onclick="closeProgressModal()" disabled>Close</button>
+            </div>
+        </div>
+    </div>
+
 
     <script>
         // ===================================
@@ -1091,7 +1114,138 @@
             }
         });
 
-        // Upload folder
+        // WebSocket connection for progress updates
+        let uploadWebSocket = null;
+        
+        // Generate unique client ID
+        function generateClientId() {
+            return 'client_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+        
+        // Show progress modal
+        function showProgressModal() {
+            document.getElementById('uploadProgressModal').classList.add('active');
+            document.getElementById('progressBar').style.width = '0%';
+            document.getElementById('progressBar').textContent = '0%';
+            document.getElementById('progressMessages').innerHTML = '<div style="color: #666; font-size: 0.9em;">⏳ Initializing upload...</div>';
+            document.getElementById('closeProgressBtn').disabled = true;
+        }
+        
+        // Close progress modal
+        function closeProgressModal() {
+            document.getElementById('uploadProgressModal').classList.remove('active');
+            if (uploadWebSocket) {
+                uploadWebSocket.close();
+                uploadWebSocket = null;
+            }
+        }
+        
+        // Add progress message
+        function addProgressMessage(message, type = 'info') {
+            const messagesDiv = document.getElementById('progressMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.style.cssText = 'padding: 8px 0; font-size: 0.9em; border-bottom: 1px solid #e0e0e0;';
+            
+            let icon = '📤';
+            let color = '#666';
+            
+            // Auto-detect type from message content
+            if (message.includes('✓') || message.includes('complete') || message.includes('Complete')) {
+                icon = '✅';
+                color = '#4caf50';
+            } else if (message.includes('✗') || message.includes('Failed') || message.includes('Error')) {
+                icon = '❌';
+                color = '#d32f2f';
+            } else if (message.includes('📁') || message.includes('Creating folder') || message.includes('directory')) {
+                icon = '📁';
+                color = '#ff6b35';
+            } else if (type === 'success') {
+                icon = '✅';
+                color = '#4caf50';
+            } else if (type === 'error') {
+                icon = '❌';
+                color = '#d32f2f';
+            } else if (type === 'folder') {
+                icon = '📁';
+                color = '#ff6b35';
+            }
+            
+            // Remove duplicate icons if message already contains one
+            let displayMessage = message;
+            if (message.includes('✓') || message.includes('✗') || message.includes('📁') || message.includes('📤')) {
+                displayMessage = message;
+                icon = '';
+            }
+            
+            messageDiv.innerHTML = `<span style="color: ${color};">${icon} ${displayMessage}</span>`;
+            messagesDiv.appendChild(messageDiv);
+            
+            // Auto-scroll to bottom
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        
+        // Update progress bar
+        function updateProgressBar(progress) {
+            const progressBar = document.getElementById('progressBar');
+            progressBar.style.width = progress + '%';
+            progressBar.textContent = progress + '%';
+        }
+        
+        // Connect to WebSocket
+        function connectUploadWebSocket(clientId) {
+            return new Promise((resolve, reject) => {
+                // Determine WebSocket protocol based on current protocol
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const wsUrl = `${protocol}//${window.location.host}/ws/${clientId}`;
+                
+                const ws = new WebSocket(wsUrl);
+                
+                ws.onopen = () => {
+                    console.log('WebSocket connected');
+                    resolve(ws);
+                };
+                
+                ws.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    console.log('WebSocket message:', data);
+                    
+                    if (data.type === 'progress') {
+                        addProgressMessage(data.message, 'info');
+                        if (data.progress !== undefined) {
+                            updateProgressBar(data.progress);
+                        }
+                    } else if (data.type === 'complete') {
+                        addProgressMessage(data.message, 'success');
+                        updateProgressBar(100);
+                        document.getElementById('closeProgressBtn').disabled = false;
+                        
+                        // Auto-close after 3 seconds and refresh structure
+                        setTimeout(() => {
+                            closeProgressModal();
+                            loadStructure();
+                            showMessage('Upload completed successfully!', 'success');
+                        }, 3000);
+                    } else if (data.type === 'error') {
+                        addProgressMessage(data.message, 'error');
+                        document.getElementById('closeProgressBtn').disabled = false;
+                    } else if (data.type === 'pong') {
+                        // Heartbeat response
+                        console.log('Heartbeat pong received');
+                    }
+                };
+                
+                ws.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                    reject(error);
+                };
+                
+                ws.onclose = () => {
+                    console.log('WebSocket disconnected');
+                };
+            });
+        }
+
+        // Upload folder with WebSocket progress
         document.getElementById('uploadFolderForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -1103,34 +1257,34 @@
                 return;
             }
 
-            // Disable button and show progress
-            const uploadBtn = document.getElementById('uploadFolderBtn');
-            uploadBtn.disabled = true;
-            uploadBtn.textContent = `Uploading ${files.length} files...`;
+            // Generate client ID for WebSocket
+            const clientId = generateClientId();
+            
+            // Close the upload folder modal
+            closeModal('uploadFolder');
+            
+            // Show progress modal
+            showProgressModal();
 
             try {
+                // Connect to WebSocket
+                uploadWebSocket = await connectUploadWebSocket(clientId);
+                
+                // Prepare form data
                 const formData = new FormData();
                 const filePaths = [];
 
                 // Process each file and preserve the complete folder structure
-                // webkitRelativePath already includes the full structure from the selected folder
-                // Example: If you select "MyProject" folder with "MyProject/src/file.js"
-                // We store it as: "MyProject/src" (relative to current location)
-                
                 for (let i = 0; i < files.length; i++) {
                     const file = files[i];
-                    // webkitRelativePath includes the root folder name
-                    // e.g., "MyProject/src/components/Header.js"
                     const relativePath = file.webkitRelativePath || file.name;
                     
                     // Extract the folder path (remove only the file name at the end)
-                    // This preserves the root folder name and all subfolders
                     const pathParts = relativePath.split('/');
                     pathParts.pop(); // Remove file name only
-                    let folderPath = pathParts.join('/'); // Keeps "MyProject/src/components"
+                    let folderPath = pathParts.join('/');
                     
                     // If we're in a subfolder, prepend currentPath
-                    // Only add currentPath if we're not at root
                     if (currentPath) {
                         folderPath = currentPath + '/' + folderPath;
                     }
@@ -1139,13 +1293,16 @@
                     filePaths.push(folderPath);
                 }
 
-                // Add paths as JSON string
+                // Add paths and client_id to form data
                 formData.append('paths', JSON.stringify(filePaths));
+                formData.append('client_id', clientId);
 
                 const headers = {};
                 if (isAuthenticated()) {
                     headers['Authorization'] = `Bearer ${getAuthToken()}`;
                 }
+
+                addProgressMessage(`Starting upload of ${files.length} files...`, 'info');
 
                 const response = await fetch('/api/upload-multiple', {
                     method: 'POST',
@@ -1155,34 +1312,27 @@
 
                 const result = await response.json();
 
-                if (response.ok) {
-                    if (result.failed > 0) {
-                        showMessage(`Uploaded ${result.success} files, ${result.failed} failed`, 'error');
-                    } else {
-                        showMessage(`Successfully uploaded ${result.success} files!`, 'success');
-                    }
-                    document.getElementById('uploadFolderForm').reset();
-                    document.getElementById('folderPreview').style.display = 'none';
-                    closeModal('uploadFolder');
-                    loadStructure();
-                } else {
+                if (!response.ok) {
                     if (response.status === 401) {
-                        showMessage('Session expired. Redirecting to login...', 'error');
-                        closeModal('uploadFolder');
+                        addProgressMessage('Session expired. Redirecting to login...', 'error');
                         setTimeout(() => {
                             clearAuthToken();
                             window.location.href = '/';
                         }, 1500);
                     } else {
-                        showMessage(`Error: ${result.detail || 'Upload failed'}`, 'error');
+                        addProgressMessage(`Error: ${result.detail || 'Upload failed'}`, 'error');
                     }
+                    document.getElementById('closeProgressBtn').disabled = false;
                 }
+                
+                // Reset form
+                document.getElementById('uploadFolderForm').reset();
+                document.getElementById('folderPreview').style.display = 'none';
+                
             } catch (error) {
-                showMessage(`Error: ${error.message}`, 'error');
-            } finally {
-                // Re-enable button
-                uploadBtn.disabled = false;
-                uploadBtn.textContent = 'Upload Folder';
+                console.error('Upload error:', error);
+                addProgressMessage(`Error: ${error.message}`, 'error');
+                document.getElementById('closeProgressBtn').disabled = false;
             }
         });
 
