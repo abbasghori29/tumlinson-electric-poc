@@ -4,8 +4,8 @@
   "requiresCompatibilities": ["FARGATE"],
   "cpu": "512",
   "memory": "1024",
-  "executionRoleArn": "arn:aws:iam::YOUR_ACCOUNT_ID:role/ecsTaskExecutionRole",
-  "taskRoleArn": "arn:aws:iam::YOUR_ACCOUNT_ID:role/ecsTaskRole",
+  "executionRoleArn": "arn:aws:iam::967525620453:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::967525620453:role/ecsTaskRole",
   "containerDefinitions": [
     {
       "name": "tumlinson-poc",
@@ -25,32 +25,44 @@
         {
           "name": "PORT",
           "value": "8000"
+        },
+        {
+          "name": "AWS_REGION",
+          "value": "us-east-1"
+        },
+        {
+          "name": "ALGORITHM",
+          "value": "HS256"
+        },
+        {
+          "name": "ACCESS_TOKEN_EXPIRE_MINUTES",
+          "value": "30"
         }
       ],
       "secrets": [
         {
           "name": "DATABASE_URL",
-          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:DATABASE_URL"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:967525620453:secret:DATABASE_URL"
         },
         {
           "name": "AWS_ACCESS_KEY_ID",
-          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:AWS_ACCESS_KEY_ID"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:967525620453:secret:AWS_ACCESS_KEY_ID"
         },
         {
           "name": "AWS_SECRET_ACCESS_KEY",
-          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:AWS_SECRET_ACCESS_KEY"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:967525620453:secret:AWS_SECRET_ACCESS_KEY"
         },
         {
           "name": "AWS_S3_BUCKET_NAME",
-          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:AWS_S3_BUCKET_NAME"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:967525620453:secret:AWS_S3_BUCKET_NAME"
         },
         {
           "name": "SECRET_KEY",
-          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:SECRET_KEY"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:967525620453:secret:SECRET_KEY"
         },
         {
           "name": "TRACKING_CSV_S3_KEY",
-          "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:TRACKING_CSV_S3_KEY"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:967525620453:secret:TRACKING_CSV_S3_KEY"
         }
       ],
       "logConfiguration": {

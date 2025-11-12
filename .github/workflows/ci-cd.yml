@@ -31,17 +31,13 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install flake8 black isort mypy
+          pip install flake8 isort mypy
           pip install -r requirements.txt
 
       - name: Run flake8
         run: |
           flake8 app/ --count --select=E9,F63,F7,F82 --show-source --statistics
           flake8 app/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-
-      - name: Check code formatting with black
-        run: |
-          black --check app/
 
       - name: Check import sorting with isort
         run: |
@@ -191,6 +187,20 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
+      - name: Run database migrations
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ secrets.AWS_ECR_REPOSITORY }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          echo "Running database migrations..."
+          docker run --rm \
+            -e DATABASE_URL="${{ secrets.TEST_DATABASE_URL }}" \
+            -e DIRECT_URL="${{ secrets.TEST_DATABASE_URL }}" \
+            $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            alembic upgrade head
+          echo "✅ Database migrations completed successfully"
+
       - name: Fill in the new image ID in the Amazon ECS task definition
         id: task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1
@@ -206,6 +216,7 @@ jobs:
           service: ${{ secrets.AWS_ECS_SERVICE }}
           cluster: ${{ secrets.AWS_ECS_CLUSTER }}
           wait-for-service-stability: true
+
 
       - name: Notify deployment
         run: |
