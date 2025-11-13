@@ -42,27 +42,27 @@
       "secrets": [
         {
           "name": "DATABASE_URL",
-          "valueFrom": "arn:aws:secretsmanager:us-east-1:967525620453:secret:DATABASE_URL"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:967525620453:secret:tumlinson-poc-zMTSca:DATABASE_URL::"
         },
         {
           "name": "AWS_ACCESS_KEY_ID",
-          "valueFrom": "arn:aws:secretsmanager:us-east-1:967525620453:secret:AWS_ACCESS_KEY_ID"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:967525620453:secret:tumlinson-poc-zMTSca:AWS_ACCESS_KEY_ID::"
         },
         {
           "name": "AWS_SECRET_ACCESS_KEY",
-          "valueFrom": "arn:aws:secretsmanager:us-east-1:967525620453:secret:AWS_SECRET_ACCESS_KEY"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:967525620453:secret:tumlinson-poc-zMTSca:AWS_SECRET_ACCESS_KEY::"
         },
         {
           "name": "AWS_S3_BUCKET_NAME",
-          "valueFrom": "arn:aws:secretsmanager:us-east-1:967525620453:secret:AWS_S3_BUCKET_NAME"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:967525620453:secret:tumlinson-poc-zMTSca:AWS_S3_BUCKET_NAME::"
         },
         {
           "name": "SECRET_KEY",
-          "valueFrom": "arn:aws:secretsmanager:us-east-1:967525620453:secret:SECRET_KEY"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:967525620453:secret:tumlinson-poc-zMTSca:SECRET_KEY::"
         },
         {
           "name": "TRACKING_CSV_S3_KEY",
-          "valueFrom": "arn:aws:secretsmanager:us-east-1:967525620453:secret:TRACKING_CSV_S3_KEY"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:967525620453:secret:tumlinson-poc-zMTSca:TRACKING_CSV_S3_KEY::"
         }
       ],
       "logConfiguration": {
@@ -79,9 +79,9 @@
           "python -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:8000/api/config\")' || exit 1"
         ],
         "interval": 30,
-        "timeout": 5,
+        "timeout": 10,
         "retries": 3,
-        "startPeriod": 60
+        "startPeriod": 120
       }
     }
   ]

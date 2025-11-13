@@ -217,13 +217,48 @@ jobs:
           container-name: tumlinson-poc
           image: ${{ steps.build-image.outputs.image }}
 
+      - name: Check current service status
+        run: |
+          echo "Checking current ECS service status..."
+          aws ecs describe-services \
+            --cluster ${{ secrets.AWS_ECS_CLUSTER }} \
+            --services ${{ secrets.AWS_ECS_SERVICE }} \
+            --query 'services[0].{Status:status,RunningCount:runningCount,DesiredCount:desiredCount,PendingCount:pendingCount}' \
+            --output table || true
+
       - name: Deploy Amazon ECS task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        continue-on-error: true
         with:
           task-definition: ${{ steps.task-def.outputs.task-definition }}
           service: ${{ secrets.AWS_ECS_SERVICE }}
           cluster: ${{ secrets.AWS_ECS_CLUSTER }}
           wait-for-service-stability: true
+          wait-for-minutes: 15
+
+      - name: Check deployment status
+        if: always()
+        run: |
+          echo "Checking deployment status..."
+          aws ecs describe-services \
+            --cluster ${{ secrets.AWS_ECS_CLUSTER }} \
+            --services ${{ secrets.AWS_ECS_SERVICE }} \
+            --query 'services[0].{Status:status,RunningCount:runningCount,DesiredCount:desiredCount,PendingCount:pendingCount,Events:events[0:5]}' \
+            --output json || true
+          
+          echo "Checking recent task statuses..."
+          TASK_ARN=$(aws ecs list-tasks --cluster ${{ secrets.AWS_ECS_CLUSTER }} --service-name ${{ secrets.AWS_ECS_SERVICE }} --query 'taskArns[0]' --output text)
+          if [ ! -z "$TASK_ARN" ]; then
+            echo "Task ARN: $TASK_ARN"
+            aws ecs describe-tasks --cluster ${{ secrets.AWS_ECS_CLUSTER }} --tasks $TASK_ARN --query 'tasks[0].{LastStatus:lastStatus,HealthStatus:healthStatus,StoppedReason:stoppedReason}' --output json || true
+          fi
+          
+          echo "Checking CloudWatch logs..."
+          LOG_STREAM=$(aws logs describe-log-streams --log-group-name /ecs/tumlinson-poc --order-by LastEventTime --descending --max-items 1 --query 'logStreams[0].logStreamName' --output text)
+          if [ ! -z "$LOG_STREAM" ] && [ "$LOG_STREAM" != "None" ]; then
+            echo "Recent logs from $LOG_STREAM:"
+            aws logs get-log-events --log-group-name /ecs/tumlinson-poc --log-stream-name "$LOG_STREAM" --limit 20 --query 'events[*].message' --output text || true
+          fi
 
 
       - name: Notify deployment
