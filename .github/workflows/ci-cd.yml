@@ -108,11 +108,13 @@ jobs:
           pip install -r requirements.txt
           pip install pytest pytest-asyncio httpx
 
-      - name: Run database migrations
+      - name: Run database migrations (skip - RDS not accessible from CI)
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
-          alembic upgrade head || echo "No migrations to run"
+          echo "⚠️ Skipping migrations in CI - RDS is not accessible from GitHub Actions"
+          echo "Migrations will run during deployment on EC2"
+          # alembic upgrade head || echo "No migrations to run"
 
       - name: Run tests (if any)
         run: |
@@ -148,7 +150,7 @@ jobs:
           output: 'trivy-results.sarif'
 
       - name: Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: 'trivy-results.sarif'
@@ -189,19 +191,6 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-      - name: Run database migrations
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ secrets.AWS_ECR_REPOSITORY }}
-          IMAGE_TAG: ${{ github.sha }}
-        run: |
-          echo "Running database migrations..."
-          docker run --rm \
-            -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
-            $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
-            alembic upgrade head
-          echo "✅ Database migrations completed successfully"
-
       # EC2 Deployment
       - name: Setup SSH for EC2
         run: |
@@ -209,6 +198,29 @@ jobs:
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/ec2_key
           chmod 600 ~/.ssh/ec2_key
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts || true
+
+      - name: Run database migrations on EC2
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ secrets.AWS_ECR_REPOSITORY }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          echo "Running database migrations on EC2 (where RDS is accessible)..."
+          EC2_USER="${{ secrets.EC2_USER || 'ec2-user' }}"
+          EC2_HOST="${{ secrets.EC2_HOST }}"
+          
+          ssh -i ~/.ssh/ec2_key -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} << 'EOF'
+            set -e
+            echo "Logging into ECR for migrations..."
+            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
+            
+            echo "Running migrations..."
+            docker run --rm \
+              -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
+              ${{ steps.login-ecr.outputs.registry }}/${{ secrets.AWS_ECR_REPOSITORY }}:${{ github.sha }} \
+              alembic upgrade head
+            echo "✅ Database migrations completed successfully"
+          EOF
 
       - name: Deploy to EC2
         env:
