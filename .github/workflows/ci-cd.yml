@@ -215,11 +215,11 @@ jobs:
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
             
             echo "Running migrations..."
-            docker run --rm \
+          docker run --rm \
               -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
               ${{ steps.login-ecr.outputs.registry }}/${{ secrets.AWS_ECR_REPOSITORY }}:${{ github.sha }} \
-              alembic upgrade head
-            echo "✅ Database migrations completed successfully"
+            alembic upgrade head
+          echo "✅ Database migrations completed successfully"
           EOF
 
       - name: Deploy to EC2
@@ -235,6 +235,19 @@ jobs:
           # Login to ECR on EC2 and deploy
           ssh -i ~/.ssh/ec2_key -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} << 'EOF'
             set -e
+            echo "Ensuring Redis is running..."
+            if ! docker ps | grep -q redis; then
+              echo "Starting Redis container..."
+              docker run -d \
+                --name redis \
+                --restart unless-stopped \
+                -p 6379:6379 \
+                redis:latest
+              echo "✅ Redis container started"
+            else
+              echo "✅ Redis container already running"
+            fi
+            
             echo "Logging into ECR..."
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
             
@@ -245,7 +258,7 @@ jobs:
             echo "Stopping old container..."
             docker stop tumlinson-poc 2>/dev/null || true
             docker rm tumlinson-poc 2>/dev/null || true
-            
+          
             echo "Starting new container..."
             docker run -d \
               --name tumlinson-poc \

@@ -4,7 +4,7 @@ Authentication routes: login, register, logout, user profile
 from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, OperationalError
 
 from app.database import get_db
 from app.models import User
@@ -39,42 +39,48 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
         Created user object
     
     Raises:
-        HTTPException: If username or email already exists
+        HTTPException: If username or email already exists or database connection fails
     """
-    # Check if user already exists
-    existing_user = db.query(User).filter(
-        (User.email == user_data.email) | (User.username == user_data.username)
-    ).first()
-    
-    if existing_user:
-        if existing_user.email == user_data.email:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Email already registered"
-            )
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Username already taken"
-            )
-    
-    # Create new user
-    hashed_password = get_password_hash(user_data.password)
-    
-    db_user = User(
-        email=user_data.email,
-        username=user_data.username,
-        full_name=user_data.full_name,
-        hashed_password=hashed_password,
-        is_active=True,
-        is_superuser=False
-    )
-    
     try:
+        # Check if user already exists
+        existing_user = db.query(User).filter(
+            (User.email == user_data.email) | (User.username == user_data.username)
+        ).first()
+        
+        if existing_user:
+            if existing_user.email == user_data.email:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Email already registered"
+                )
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Username already taken"
+                )
+        
+        # Create new user
+        hashed_password = get_password_hash(user_data.password)
+        
+        db_user = User(
+            email=user_data.email,
+            username=user_data.username,
+            full_name=user_data.full_name,
+            hashed_password=hashed_password,
+            is_active=True,
+            is_superuser=False
+        )
+        
         db.add(db_user)
         db.commit()
         db.refresh(db_user)
         return db_user
+    except OperationalError as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Database connection failed: {str(e)}. Please check your database configuration and network connectivity."
+        )
     except IntegrityError as e:
         db.rollback()
         raise HTTPException(
@@ -96,9 +102,20 @@ def login(login_data: LoginRequest, db: Session = Depends(get_db)):
         Access token and user information
     
     Raises:
-        HTTPException: If credentials are invalid
+        HTTPException: If credentials are invalid or database connection fails
     """
-    user = authenticate_user(db, login_data.username, login_data.password)
+    try:
+        user = authenticate_user(db, login_data.username, login_data.password)
+    except OperationalError as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Database connection failed: {str(e)}. Please check your database configuration and network connectivity."
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Authentication error: {str(e)}"
+        )
     
     if not user:
         raise HTTPException(
