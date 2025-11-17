@@ -13,17 +13,13 @@ router = APIRouter(prefix="/api", tags=["Structure"])
 
 @router.get("/structure")
 async def get_structure(
-    page: int = 1,
-    limit: int = 50,
     search: str = "",
     storage: StorageService = Depends(get_storage_service)
 ):
     """
-    Get folder and file structure with pagination and search
+    Get folder and file structure with search (no pagination - returns all items)
     
     Args:
-        page: Page number (default: 1)
-        limit: Items per page (default: 50, use 0 for all)
         search: Search query for filtering by name
     """
     # Get all items from storage
@@ -55,34 +51,9 @@ async def get_structure(
     
     total_items = len(all_items)
     
-    # Handle "all" items case (limit = 0)
-    if limit <= 0:
-        return {
-            "items": all_items,
-            "total": total_items,
-            "page": 1,
-            "limit": 0,
-            "total_pages": 1,
-            "has_next": False,
-            "has_prev": False
-        }
-    
-    # Calculate pagination
-    total_pages = (total_items + limit - 1) // limit if total_items > 0 else 1
-    page = max(1, min(page, total_pages))  # Clamp page to valid range
-    
-    start_index = (page - 1) * limit
-    end_index = start_index + limit
-    
-    paginated_items = all_items[start_index:end_index]
-    
+    # Return all items (no pagination)
     return {
-        "items": paginated_items,
-        "total": total_items,
-        "page": page,
-        "limit": limit,
-        "total_pages": total_pages,
-        "has_next": page < total_pages,
-        "has_prev": page > 1
+        "items": all_items,
+        "total": total_items
     }
 

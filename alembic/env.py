@@ -38,11 +38,10 @@ target_metadata = Base.metadata
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
 
-# Override the sqlalchemy.url with our DIRECT_URL from environment
-# This ensures migrations use the direct connection, not the pooled one
+# Override the sqlalchemy.url with DATABASE_URL from environment
 def get_url():
     """Get database URL from environment variable"""
-    return os.getenv("DIRECT_URL", "postgresql://localhost/postgres")
+    return os.getenv("DATABASE_URL", "postgresql://localhost/postgres")
 
 
 def run_migrations_offline() -> None:

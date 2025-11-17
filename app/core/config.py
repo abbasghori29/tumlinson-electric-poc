@@ -46,6 +46,13 @@ class Settings:
     # Database
     DATABASE_URL: str = os.getenv("DATABASE_URL", "")
     
+    # Redis Cache
+    REDIS_HOST: str = os.getenv("REDIS_HOST", "localhost")
+    REDIS_PORT: int = int(os.getenv("REDIS_PORT", "6379"))
+    REDIS_DB: int = int(os.getenv("REDIS_DB", "0"))
+    REDIS_TLS: bool = os.getenv("REDIS_TLS", "false").lower() in ("true", "1", "yes")
+    CACHE_TTL: int = int(os.getenv("CACHE_TTL", "600"))  # 10 minutes default
+    
     @property
     def use_s3(self) -> bool:
         """Check if S3 is configured"""

@@ -11,6 +11,7 @@ import aiofiles
 from app.core.config import settings
 from app.utils.path_utils import generate_slug, normalize_path
 from app.utils.logger import get_logger
+from app.services.cache_service import get_cache_service
 
 logger = get_logger(__name__)
 
@@ -76,6 +77,12 @@ class S3StorageService(StorageService):
                 )
             
             logger.info(f"Uploaded file to S3: {s3_key}")
+            
+            # Invalidate cache after upload (clears root cache to ensure fresh data)
+            cache_service = await get_cache_service()
+            await cache_service.invalidate_list_cache(self.bucket, folder_path)
+            logger.debug(f"Cache invalidated after upload in folder: {folder_path}")
+            
             return {
                 "filename": file.filename,
                 "path": s3_key,
@@ -95,6 +102,13 @@ class S3StorageService(StorageService):
             async with self.session.client('s3') as s3_client:
                 await s3_client.delete_object(Bucket=self.bucket, Key=file_path)
             logger.info(f"Deleted file from S3: {file_path}")
+            
+            # Invalidate cache after delete (clears root cache to ensure fresh data)
+            # Extract folder path from file path
+            folder_path = '/'.join(file_path.split('/')[:-1]) if '/' in file_path else None
+            cache_service = await get_cache_service()
+            await cache_service.invalidate_list_cache(self.bucket, folder_path)
+            logger.debug(f"Cache invalidated after file delete: {file_path}")
         except ClientError as e:
             logger.error(f"S3 delete error for {file_path}: {e}")
             raise HTTPException(status_code=500, detail=f"S3 error: {str(e)}")
@@ -109,6 +123,11 @@ class S3StorageService(StorageService):
                     objects = [{'Key': obj['Key']} for obj in response['Contents']]
                     await s3_client.delete_objects(Bucket=self.bucket, Delete={'Objects': objects})
             logger.info(f"Deleted folder from S3: {folder_path}")
+            
+            # Invalidate cache after folder delete (clears root cache to ensure fresh data)
+            cache_service = await get_cache_service()
+            await cache_service.invalidate_list_cache(self.bucket, folder_path)
+            logger.debug(f"Cache invalidated after folder delete: {folder_path}")
         except ClientError as e:
             logger.error(f"S3 delete folder error for {folder_path}: {e}")
             raise HTTPException(status_code=500, detail=f"S3 error: {str(e)}")
@@ -120,12 +139,28 @@ class S3StorageService(StorageService):
             async with self.session.client('s3') as s3_client:
                 await s3_client.put_object(Bucket=self.bucket, Key=f"{folder_path}/", Body=b"")
             logger.debug(f"Created folder in S3: {folder_path}/")
+            
+            # Invalidate cache after folder creation (clears root cache to ensure fresh data)
+            # Also invalidate parent folder cache
+            parent_path = '/'.join(folder_path.split('/')[:-1]) if '/' in folder_path else None
+            cache_service = await get_cache_service()
+            await cache_service.invalidate_list_cache(self.bucket, parent_path)
+            logger.debug(f"Cache invalidated after folder creation: {folder_path}")
         except ClientError as e:
             logger.error(f"S3 create folder error for {folder_path}: {e}")
             raise HTTPException(status_code=500, detail=f"S3 error: {str(e)}")
     
     async def list_objects(self) -> Dict[str, List]:
-        """List all objects in S3 bucket"""
+        """List all objects in S3 bucket with Redis caching"""
+        # Try to get from cache first
+        cache_service = await get_cache_service()
+        cached_data = await cache_service.get_list_cache(self.bucket)
+        
+        if cached_data is not None:
+            logger.debug("Returning cached S3 listing data")
+            return cached_data
+        
+        # Cache miss - fetch from S3
         try:
             async with self.session.client('s3') as s3_client:
                 response = await s3_client.list_objects_v2(Bucket=self.bucket)
@@ -134,7 +169,10 @@ class S3StorageService(StorageService):
                 folders_set = set()
                 
                 if 'Contents' not in response:
-                    return {"items": [], "folders_set": set()}
+                    result = {"items": [], "folders_set": set()}
+                    # Cache empty result
+                    await cache_service.set_list_cache(self.bucket, result, ttl=settings.CACHE_TTL)
+                    return result
                 
                 for obj in response['Contents']:
                     key = obj['Key']
@@ -183,7 +221,12 @@ class S3StorageService(StorageService):
                             "item_type": "file"
                         })
                 
-                return {"items": all_items, "folders_set": folders_set}
+                result = {"items": all_items, "folders_set": folders_set}
+                
+                # Cache the result
+                await cache_service.set_list_cache(self.bucket, result, ttl=settings.CACHE_TTL)
+                
+                return result
         except ClientError as e:
             logger.error(f"S3 list objects error: {e}")
             raise HTTPException(status_code=500, detail=f"S3 error: {str(e)}")

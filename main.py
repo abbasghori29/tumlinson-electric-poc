@@ -11,6 +11,7 @@ from app.core.config import settings
 from app.routers import auth, files, folders, structure, tracking, websocket
 from app.services.storage_service import get_storage_service
 from app.services.folder_service import FolderService
+from app.services.cache_service import close_cache_service
 from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -50,6 +51,15 @@ async def startup_event():
         logger.info("Root folders ensured")
     except Exception as e:
         logger.error(f"Failed to ensure root folders: {e}")
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Cleanup on shutdown"""
+    logger.info("Shutting down application")
+    # Close Redis cache connection
+    await close_cache_service()
+    logger.info("Cache service closed")
 
 
 @app.get("/", response_class=HTMLResponse)

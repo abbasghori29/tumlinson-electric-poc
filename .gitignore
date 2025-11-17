@@ -4,6 +4,14 @@
 .env.*.local
 env_template.txt
 
+# IAM policies with actual account IDs (templates should be committed)
+iam-policies/secrets-policy.json
+iam-policies/s3-access-policy.json
+# But keep .template.json files in version control
+
+# Old ECS settings folder (can be deleted after migration to iam-policies/)
+ECS settings json/
+
 # Documentation (can be regenerated)
 API_DOCUMENTATION.md
 

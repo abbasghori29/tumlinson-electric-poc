@@ -27,7 +27,6 @@ services:
       
       # Database Configuration
       - DATABASE_URL=${DATABASE_URL}
-      - DIRECT_URL=${DIRECT_URL}
       
       # JWT Configuration
       - SECRET_KEY=${SECRET_KEY}

@@ -926,6 +926,41 @@
         // Tracking state
         let trackingSearch = '';
 
+        // Frontend cache for structure data (key: path + page + limit + search)
+        const structureCache = new Map();
+        
+        // Generate cache key
+        function getCacheKey(path, page, limit, search) {
+            return `${path || 'root'}:${page}:${limit}:${search || ''}`;
+        }
+        
+        // Invalidate cache for a specific path and all its children
+        function invalidateCache(path = null) {
+            if (path === null) {
+                // Clear all cache
+                structureCache.clear();
+                console.log('Cache cleared (all)');
+            } else {
+                // Remove cache entries that match the path, are children of it, or are parent paths
+                const keysToDelete = [];
+                for (const key of structureCache.keys()) {
+                    const keyPath = key.split(':')[0];
+                    // Invalidate if:
+                    // 1. Exact match
+                    // 2. Child of path
+                    // 3. Parent of path (or root)
+                    if (keyPath === path || 
+                        keyPath.startsWith(path + '/') || 
+                        path.startsWith(keyPath + '/') ||
+                        keyPath === 'root') {
+                        keysToDelete.push(key);
+                    }
+                }
+                keysToDelete.forEach(key => structureCache.delete(key));
+                console.log(`Cache invalidated for path: ${path} (${keysToDelete.length} entries)`);
+            }
+        }
+
         // Update back/forward button states
         function updateNavigationButtons() {
             const backBtn = document.getElementById('backBtn');
@@ -1219,6 +1254,10 @@
                         updateProgressBar(100);
                         document.getElementById('closeProgressBtn').disabled = false;
                         
+                        // Clear all cache after upload to ensure fresh data
+                        structureCache.clear();
+                        console.log('Cache cleared after upload');
+                        
                         // Auto-close after 3 seconds and refresh structure
                         setTimeout(() => {
                             closeProgressModal();
@@ -1357,6 +1396,9 @@
 
                 if (response.ok) {
                     showMessage(result.message, 'success');
+                    // Clear all cache after delete to ensure fresh data
+                    structureCache.clear();
+                    console.log('Cache cleared after delete');
                     loadStructure();
                 } else {
                     if (response.status === 401) {
@@ -1447,11 +1489,65 @@
         // Load structure with backend pagination
         async function loadStructure() {
             const fileGrid = document.getElementById('fileGrid');
+            
+            // Check cache first
+            const limit = itemsPerPage === 'all' ? 0 : itemsPerPage;
+            const cacheKey = getCacheKey(currentPath, currentPage, limit, searchQuery);
+            const cachedData = structureCache.get(cacheKey);
+            
+            if (cachedData) {
+                console.log('Using cached data for:', cacheKey);
+                // Use cached data
+                const currentFolders = [];
+                const currentFiles = [];
+
+                // Filter items: show only direct children of current path
+                cachedData.items.forEach(item => {
+                    if (item.item_type === 'folder') {
+                        const folderPath = item.path;
+                        
+                        if (currentPath === '') {
+                            // Root level: show folders that don't have a slash (top-level only)
+                            if (!folderPath.includes('/')) {
+                                currentFolders.push(item);
+                            }
+                        } else {
+                            // Inside a folder: show direct children only
+                            if (folderPath.startsWith(currentPath + '/')) {
+                                const relativePath = folderPath.substring(currentPath.length + 1);
+                                // Only direct children (no more slashes)
+                                if (!relativePath.includes('/')) {
+                                    currentFolders.push(item);
+                                }
+                            }
+                        }
+                    } else {
+                        // File
+                        const fileFolder = item.folder;
+                        
+                        if (currentPath === '' && fileFolder === '/') {
+                            // Root level files
+                            currentFiles.push(item);
+                        } else if (fileFolder === currentPath) {
+                            // Files in current folder
+                            currentFiles.push(item);
+                        }
+                    }
+                });
+
+                // Combine folders and files (folders first - already sorted by backend)
+                const filteredItems = [...currentFolders, ...currentFiles];
+
+                // Update display
+                displayItems(filteredItems, cachedData.total, cachedData.total_pages);
+                return;
+            }
+
+            // Cache miss - fetch from API
             fileGrid.innerHTML = '<div class="loading">Loading...</div>';
 
             try {
                 // Build query parameters
-                const limit = itemsPerPage === 'all' ? 0 : itemsPerPage;
                 const params = new URLSearchParams({
                     page: currentPage,
                     limit: limit,
@@ -1460,6 +1556,10 @@
 
                 const response = await fetch(`/api/structure?${params}`);
                 const data = await response.json();
+                
+                // Cache the full response (before filtering)
+                structureCache.set(cacheKey, data);
+                console.log('Cached data for:', cacheKey);
 
                 // Filter items to show only current directory
                 const currentFolders = [];
