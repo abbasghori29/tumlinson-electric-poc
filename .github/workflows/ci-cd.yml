@@ -199,150 +199,6 @@ jobs:
           chmod 600 ~/.ssh/ec2_key
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts || true
 
-      - name: Setup HTTPS with nginx (Self-signed certificate for IP)
-        env:
-          EC2_HOST: ${{ secrets.EC2_HOST }}
-        run: |
-          echo "Setting up HTTPS with nginx and self-signed certificate..."
-          EC2_USER="${{ secrets.EC2_USER || 'ec2-user' }}"
-          EC2_HOST="${{ secrets.EC2_HOST }}"
-          
-          ssh -i ~/.ssh/ec2_key -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} << 'HTTPS_EOF'
-            set -e
-            EC2_HOST="${{ secrets.EC2_HOST }}"
-            
-            echo "Installing nginx and openssl..."
-            sudo yum update -y || sudo apt-get update -y || true
-            sudo yum install -y nginx openssl || \
-            sudo apt-get install -y nginx openssl || true
-            
-            # Create SSL directory
-            sudo mkdir -p /etc/nginx/ssl
-            
-            # Generate self-signed certificate (valid for 10 years)
-            if [ ! -f "/etc/nginx/ssl/server.crt" ]; then
-              echo "Generating self-signed SSL certificate..."
-              sudo openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
-                -keyout /etc/nginx/ssl/server.key \
-                -out /etc/nginx/ssl/server.crt \
-                -subj "/C=US/ST=State/L=City/O=Organization/CN=$EC2_HOST" \
-                -addext "subjectAltName=IP:$EC2_HOST"
-              echo "✅ Self-signed certificate generated"
-            else
-              echo "✅ SSL certificate already exists"
-            fi
-            
-            # Configure nginx with SSL - using proper heredoc with quotes
-            sudo tee /etc/nginx/conf.d/tumlinson.conf > /dev/null << 'NGINX_CONFIG_EOF'
-            server {
-                listen 80;
-                server_name EC2_HOST_PLACEHOLDER;
-                
-                location / {
-                    return 301 https://$host$request_uri;
-                }
-            }
-            
-            server {
-                listen 443 ssl;
-                server_name EC2_HOST_PLACEHOLDER;
-                
-                ssl_certificate /etc/nginx/ssl/server.crt;
-                ssl_certificate_key /etc/nginx/ssl/server.key;
-                
-                ssl_protocols TLSv1.2 TLSv1.3;
-                ssl_ciphers HIGH:!aNULL:!MD5;
-                ssl_prefer_server_ciphers on;
-                ssl_session_cache shared:SSL:10m;
-                ssl_session_timeout 10m;
-                
-                add_header Strict-Transport-Security "max-age=31536000" always;
-                add_header X-Frame-Options "SAMEORIGIN" always;
-                add_header X-Content-Type-Options "nosniff" always;
-                add_header X-XSS-Protection "1; mode=block" always;
-                
-                location / {
-                    proxy_pass http://localhost:8000;
-                    proxy_http_version 1.1;
-                    proxy_set_header Upgrade $http_upgrade;
-                    proxy_set_header Connection "upgrade";
-                    proxy_set_header Host $host;
-                    proxy_set_header X-Real-IP $remote_addr;
-                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                    proxy_set_header X-Forwarded-Proto $scheme;
-                    
-                    proxy_connect_timeout 60s;
-                    proxy_send_timeout 60s;
-                    proxy_read_timeout 60s;
-                }
-            }
-            NGINX_CONFIG_EOF
-            
-            # Replace placeholder with actual EC2 host
-            sudo sed -i "s/EC2_HOST_PLACEHOLDER/$EC2_HOST/g" /etc/nginx/conf.d/tumlinson.conf
-            
-            # Test nginx configuration
-            if sudo nginx -t; then
-              echo "✅ Nginx configuration test passed"
-            else
-              echo "❌ Nginx configuration test failed"
-              exit 1
-            fi
-            
-            # Start and enable nginx
-            sudo systemctl enable nginx
-            sudo systemctl restart nginx || sudo systemctl start nginx
-            
-            # Verify nginx is running
-            if sudo systemctl is-active --quiet nginx; then
-              echo "✅ Nginx is running"
-            else
-              echo "❌ Nginx failed to start"
-              sudo systemctl status nginx
-              exit 1
-            fi
-            
-            echo "✅ HTTPS setup completed successfully!"
-            echo "⚠️  Note: Using self-signed certificate. Browsers will show a security warning."
-            echo "   Click 'Advanced' → 'Proceed to $EC2_HOST' to continue."
-          HTTPS_EOF
-          
-          echo "Updating EC2 security group to allow HTTPS (ports 80 and 443)..."
-          # Get EC2 instance ID from public IP
-          INSTANCE_ID=$(aws ec2 describe-instances \
-            --filters "Name=ip-address,Values=${{ secrets.EC2_HOST }}" \
-            --query 'Reservations[0].Instances[0].InstanceId' \
-            --output text \
-            --region ${{ secrets.AWS_REGION }} || echo "")
-          
-          if [ ! -z "$INSTANCE_ID" ] && [ "$INSTANCE_ID" != "None" ]; then
-            # Get security group ID
-            SG_ID=$(aws ec2 describe-instances \
-              --instance-ids "$INSTANCE_ID" \
-              --query 'Reservations[0].Instances[0].SecurityGroups[0].GroupId' \
-              --output text \
-              --region ${{ secrets.AWS_REGION }} || echo "")
-            
-            if [ ! -z "$SG_ID" ] && [ "$SG_ID" != "None" ]; then
-              # Add HTTPS rules if they don't exist
-              aws ec2 authorize-security-group-ingress \
-                --group-id "$SG_ID" \
-                --protocol tcp \
-                --port 80 \
-                --cidr 0.0.0.0/0 \
-                --region ${{ secrets.AWS_REGION }} 2>/dev/null || echo "Port 80 rule may already exist"
-              
-              aws ec2 authorize-security-group-ingress \
-                --group-id "$SG_ID" \
-                --protocol tcp \
-                --port 443 \
-                --cidr 0.0.0.0/0 \
-                --region ${{ secrets.AWS_REGION }} 2>/dev/null || echo "Port 443 rule may already exist"
-              
-              echo "✅ Security group updated"
-            fi
-          fi
-
       - name: Run database migrations on EC2
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
@@ -404,11 +260,12 @@ jobs:
             docker rm tumlinson-poc 2>/dev/null || true
           
             echo "Starting new container..."
-            # Don't expose port 8000 directly - nginx will handle it
+            # Expose port 8000 directly (HTTP only, no nginx)
             
             docker run -d \
               --name tumlinson-poc \
               --restart unless-stopped \
+              -p 8000:8000 \
               -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
               -e AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY_ID }}" \
               -e AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
@@ -430,8 +287,6 @@ jobs:
       - name: Notify deployment
         run: |
           echo "✅ Deployment to EC2 completed successfully!"
-          echo "🌐 Application available at: https://${{ secrets.EC2_HOST }}"
-          echo "📚 API Docs: https://${{ secrets.EC2_HOST }}/docs"
-          echo "⚠️  Note: Using self-signed certificate. Browsers will show a security warning."
-          echo "   Click 'Advanced' → 'Proceed to ${{ secrets.EC2_HOST }}' to continue."
+          echo "🌐 Application available at: http://${{ secrets.EC2_HOST }}:8000"
+          echo "📚 API Docs: http://${{ secrets.EC2_HOST }}:8000/docs"
 
